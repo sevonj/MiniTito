@@ -2,37 +2,40 @@
 #include "titostate.h"
 #include <stdio.h>
 
-int8_t opcode;
-int8_t rj;
-int8_t mode;
-int8_t ri;
-int16_t addr;
-int32_t sec_operand_value; // Second operand, ri+addr or memory value, depending on mode.
-
-void load_instruction(int32_t instr)
+typedef struct
 {
-    opcode = (instr >> 24) & 0xff;
-    rj = (instr >> 21) & 7;
-    mode = (instr >> 19) & 3;
-    ri = (instr >> 16) & 07;
-    addr = instr & 0xffff;
+    int32_t opcode : 8;
+    int32_t rj : 3;
+    int32_t mode : 2;
+    int32_t ri : 3;
+    int32_t addr : 16;
+    int32_t sec_operand_value; // Second operand, ri+addr or memory value, depending on mode.
+} TTK91Instruction;
 
-    sec_operand_value = addr;
+TTK91Instruction ins;
 
-    if (ri != 0)
-        sec_operand_value += mach_cpu[ri];
 
-    if (mode == 0)
-        sec_operand_value = sec_operand_value;
+void load_instruction(int32_t input_instr)
+{
+    ins.opcode = input_instr >> 24;
+    ins.rj = (input_instr >> 21) & 0x7;
+    ins.mode = (input_instr >> 19) & 0x3;
+    ins.ri = (input_instr >> 16) & 0x7;
+    ins.addr = input_instr & 0xffff;
 
-    else if (mode == 1)
-    {
-        sec_operand_value = mach_readmem(sec_operand_value);
-    }
-    else if (mode == 2)
-    {
-        sec_operand_value = mach_readmem(mach_readmem(sec_operand_value));
-    }
+    ins.sec_operand_value = ins.addr;
+
+    if (ins.ri != 0)
+        ins.sec_operand_value += mach_cpu[ins.ri];
+
+    if (ins.mode == 0)
+        ins.sec_operand_value = ins.sec_operand_value;
+
+    else if (ins.mode == 1)
+        ins.sec_operand_value = mach_readmem(ins.sec_operand_value);
+
+    else if (ins.mode == 2)
+        ins.sec_operand_value = mach_readmem(mach_readmem(ins.sec_operand_value));
 }
 
 // ----- Nop
@@ -41,12 +44,12 @@ void instr_nop() {}
 // ----- Data transfer instructions
 void instr_load()
 {
-    mach_cpu[rj] = sec_operand_value;
+    mach_cpu[ins.rj] = ins.sec_operand_value;
 }
 void instr_store()
 {
     // Addressing mode does something funny with store instruction.
-    mach_writemem(sec_operand_value, mach_cpu[rj]);
+    mach_writemem(ins.sec_operand_value, mach_cpu[ins.rj]);
 }
 void instr_in()
 {
@@ -54,34 +57,34 @@ void instr_in()
 
     int result;
     scanf("%d", &result);
-    mach_cpu[rj] = result;
+    mach_cpu[ins.rj] = result;
 }
 void instr_out()
 {
-    int value = mach_cpu[rj];
+    int value = mach_cpu[ins.rj];
     printf("OUT: %d\n", value);
 }
 
 // ----- Artithmetic instructions
 void instr_add()
 {
-    mach_cpu[rj] += sec_operand_value;
+    mach_cpu[ins.rj] += ins.sec_operand_value;
 }
 void instr_sub()
 {
-    mach_cpu[rj] -= sec_operand_value;
+    mach_cpu[ins.rj] -= ins.sec_operand_value;
 }
 void instr_mul()
 {
-    mach_cpu[rj] *= sec_operand_value;
+    mach_cpu[ins.rj] *= ins.sec_operand_value;
 }
 void instr_div()
 {
-    mach_cpu[rj] /= sec_operand_value;
+    mach_cpu[ins.rj] /= ins.sec_operand_value;
 }
 void instr_mod()
 {
-    mach_cpu[rj] %= sec_operand_value;
+    mach_cpu[ins.rj] %= ins.sec_operand_value;
 }
 
 // ----- Logic instructions
@@ -91,11 +94,11 @@ void instr_comp()
     mach_cu[SR] &= ~(0b111 << 29);
 
     // Greater
-    if (mach_cpu[rj] > sec_operand_value)
+    if (mach_cpu[ins.rj] > ins.sec_operand_value)
         mach_cu[SR] |= 1 << 31;
 
     // Equal
-    else if (mach_cpu[rj] == sec_operand_value)
+    else if (mach_cpu[ins.rj] == ins.sec_operand_value)
         mach_cu[SR] |= 1 << 30;
 
     // Less
@@ -107,82 +110,82 @@ void instr_comp()
 void instr_jump()
 {
     // -1 because pc is incremented right after.
-    mach_cu[PC] = sec_operand_value - 1;
+    mach_cu[PC] = ins.sec_operand_value - 1;
 }
 
 void instr_jneg()
 {
-    if (mach_cpu[rj] < 0)
+    if (mach_cpu[ins.rj] < 0)
     {
-        mach_cu[PC] = sec_operand_value - 1;
+        mach_cu[PC] = ins.sec_operand_value - 1;
     }
 }
 void instr_jzer()
 {
-    if (mach_cpu[rj] == 0)
-        mach_cu[PC] = sec_operand_value - 1;
+    if (mach_cpu[ins.rj] == 0)
+        mach_cu[PC] = ins.sec_operand_value - 1;
 }
 void instr_jpos()
 {
-    if (mach_cpu[rj] > 0)
-        mach_cu[PC] = sec_operand_value - 1;
+    if (mach_cpu[ins.rj] > 0)
+        mach_cu[PC] = ins.sec_operand_value - 1;
 }
 void instr_jnneg()
 {
-    if (mach_cpu[rj] >= 0)
-        mach_cu[PC] = sec_operand_value - 1;
+    if (mach_cpu[ins.rj] >= 0)
+        mach_cu[PC] = ins.sec_operand_value - 1;
 }
 void instr_jnzer()
 {
-    if (mach_cpu[rj] != 0)
-        mach_cu[PC] = sec_operand_value - 1;
+    if (mach_cpu[ins.rj] != 0)
+        mach_cu[PC] = ins.sec_operand_value - 1;
 }
 void instr_jnpos()
 {
-    if (mach_cpu[rj] <= 0)
-        mach_cu[PC] = sec_operand_value - 1;
+    if (mach_cpu[ins.rj] <= 0)
+        mach_cu[PC] = ins.sec_operand_value - 1;
 }
 
 void instr_jles()
 {
     if (((mach_cu[SR] >> 29) & 1) == 1)
-        mach_cu[PC] = sec_operand_value - 1;
+        mach_cu[PC] = ins.sec_operand_value - 1;
 }
 void instr_jequ()
 {
     if (((mach_cu[SR] >> 30) & 1) == 1)
-        mach_cu[PC] = sec_operand_value - 1;
+        mach_cu[PC] = ins.sec_operand_value - 1;
 }
 void instr_jgre()
 {
     if (((mach_cu[SR] >> 31) & 1) == 1)
-        mach_cu[PC] = sec_operand_value - 1;
+        mach_cu[PC] = ins.sec_operand_value - 1;
 }
 void instr_jnles()
 {
     if (((mach_cu[SR] >> 29) & 1) != 1)
-        mach_cu[PC] = sec_operand_value - 1;
+        mach_cu[PC] = ins.sec_operand_value - 1;
 }
 void instr_jnequ()
 {
     if (((mach_cu[SR] >> 30) & 1) == 0)
-        mach_cu[PC] = sec_operand_value - 1;
+        mach_cu[PC] = ins.sec_operand_value - 1;
 }
 void instr_jngre()
 {
     if (((mach_cu[SR] >> 31) & 1) == 0)
-        mach_cu[PC] = sec_operand_value - 1;
+        mach_cu[PC] = ins.sec_operand_value - 1;
 }
 
 // ----- Stack instructions
 void instr_push()
 {
     mach_cpu[SP]++;
-    mach_writemem(mach_cpu[SP], sec_operand_value);
+    mach_writemem(mach_cpu[SP], ins.sec_operand_value);
 }
 void instr_pop()
 {
-    mach_cpu[ri] = mach_readmem(mach_cpu[SP]);
+    mach_cpu[ins.ri] = mach_readmem(mach_cpu[SP]);
     mach_cpu[SP]--;
 }
 void instr_pushr()
@@ -211,19 +214,19 @@ void instr_call()
     mach_writemem(mach_cpu[SP], mach_cu[PC]);
     mach_cpu[SP]++;
     mach_writemem(mach_cpu[SP], mach_cpu[FP]);
-    mach_cu[PC] = sec_operand_value - 1;
+    mach_cu[PC] = ins.sec_operand_value - 1;
     mach_cpu[FP] = mach_cpu[SP];
 }
 void instr_exit()
 {
-    mach_cpu[SP] = mach_cpu[FP] - 2 - sec_operand_value;
+    mach_cpu[SP] = mach_cpu[FP] - 2 - ins.sec_operand_value;
     mach_cu[PC] = mach_readmem(mach_cpu[FP] - 1);
     mach_cpu[FP] = mach_readmem(mach_cpu[FP]);
 }
 // ----- Syscalls
 void instr_svc()
 {
-    switch (addr)
+    switch (ins.addr)
     {
     case svc_halt:
         // Set PC to -1.
@@ -241,7 +244,7 @@ void exec_instr()
 {
     load_instruction(mach_cu[IR]);
 
-    switch (opcode)
+    switch (ins.opcode)
     {
     case NOP:
         instr_nop();
@@ -359,7 +362,7 @@ void print_instr()
 {
     load_instruction(mach_cu[IR]);
 
-    switch (opcode)
+    switch (ins.opcode)
     {
     case NOP:
         printf("NOP   ");
@@ -480,32 +483,32 @@ void print_instr()
     }
 
     // Print Rj
-    if (rj < 6)
-        printf("R%d, ", rj);
-    else if (rj == 6)
+    if (ins.rj < 6)
+        printf("R%d, ", ins.rj);
+    else if (ins.rj == 6)
         printf("SP, ");
     else
         printf("FP, ");
 
     // Print mode
-    if (mode == 0)
+    if (ins.mode == 0)
         printf("=");
-    else if (mode == 2)
+    else if (ins.mode == 2)
         printf("@");
 
-    if (ri == 0)
+    if (ins.ri == 0)
     {
         // Print address
-        printf("%d", addr);
+        printf("%d", ins.addr);
     }
-    else if (addr == 0)
+    else if (ins.addr == 0)
     {
         // Print Rj
-        if (ri == 0)
+        if (ins.ri == 0)
             printf("");
-        else if (ri < 6)
-            printf("R%d", ri);
-        else if (ri == 6)
+        else if (ins.ri < 6)
+            printf("R%d", ins.ri);
+        else if (ins.ri == 6)
             printf("SP");
         else
             printf("FP");
@@ -513,11 +516,11 @@ void print_instr()
     else
     {
         // Print address
-        printf("%d", addr);
+        printf("%d", ins.addr);
         // Print Rj
-        if (ri < 6)
-            printf("(R%d)", ri);
-        else if (ri == 6)
+        if (ins.ri < 6)
+            printf("(R%d)", ins.ri);
+        else if (ins.ri == 6)
             printf("(SP)");
         else
             printf("FP)");
