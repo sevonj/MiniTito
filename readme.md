@@ -1,5 +1,5 @@
 
-# Minitito
+# Titolib
 A hastily made ttk-91 emulator.
 
 Because [this](https://gist.github.com/sevonj/9e10a2ff824b5348ae5d32048b7fb38d) was too much for the original TitoKone.
@@ -16,11 +16,11 @@ Because [this](https://gist.github.com/sevonj/9e10a2ff824b5348ae5d32048b7fb38d) 
 
 ### Source structure / explanations
 
-        +---------------------+
-        | main.c              |
-        | Just user control.  |
-        | Will include a gui. |
-        +---------------------+
+        +------------------------+
+        | main.c                 |
+        | Just a front that      |
+        | calls the real titolib |
+        +------------------------+
                     | #include titomachine.h
                     V
         +----------------------------+
