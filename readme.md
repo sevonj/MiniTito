@@ -3,7 +3,7 @@
 A hastily made ttk-91 emulator.
 
 Because [this](https://gist.github.com/sevonj/9e10a2ff824b5348ae5d32048b7fb38d) was too much for the original TitoKone.
-See (TitoMachine)[https://github.com/sevonj/titomachine] for a gui implementation.
+See [TitoMachine](https://github.com/sevonj/titomachine) for a gui implementation.
 
 ### Notes:
 - Command line only (for now).
