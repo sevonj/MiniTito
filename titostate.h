@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 #define MACHINE_MEMSIZE 65536
+#define OUTPUT_BUFFER_SIZE 16
 
 enum register_names
 {
@@ -40,3 +41,9 @@ extern int32_t mach_mem[MACHINE_MEMSIZE];
 int32_t mach_readmem(int32_t address);
 
 void mach_writemem(int32_t address, int32_t value);
+
+
+// Misc
+extern int32_t waiting_for_input;
+extern int32_t output_buffer[OUTPUT_BUFFER_SIZE];
+extern int32_t output_buffer_len;

@@ -59,3 +59,5 @@ enum builtin_symbols {
 void exec_instr();
 
 void print_instr();
+
+void input(int32_t n);

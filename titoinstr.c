@@ -14,7 +14,6 @@ typedef struct
 
 TTK91Instruction ins;
 
-
 void load_instruction(int32_t input_instr)
 {
     ins.opcode = input_instr >> 24;
@@ -38,6 +37,15 @@ void load_instruction(int32_t input_instr)
         ins.sec_operand_value = mach_readmem(mach_readmem(ins.sec_operand_value));
 }
 
+void input(int32_t n)
+{
+    if (!waiting_for_input)
+        return;
+    mach_cpu[ins.rj] = n;
+    waiting_for_input = 0;
+    mach_cu[PC]++;
+}
+
 // ----- Nop
 void instr_nop() {}
 
@@ -53,16 +61,26 @@ void instr_store()
 }
 void instr_in()
 {
-    printf("Please input a number: ");
-
-    int result;
-    scanf("%d", &result);
-    mach_cpu[ins.rj] = result;
+    waiting_for_input = 1;
+    // printf("Please input a number: ");
+    //
+    // int result;
+    // scanf("%d", &result);
+    // mach_cpu[ins.rj] = result;
 }
 void instr_out()
 {
     int value = mach_cpu[ins.rj];
-    printf("OUT: %d\n", value);
+    // printf("OUT: %d\n", value);
+
+    for (int i = OUTPUT_BUFFER_SIZE - 1; i > 0; i--)
+        output_buffer[i] = output_buffer[i - 1];
+
+    output_buffer[0] = value;
+    output_buffer_len++;
+    
+    if (output_buffer_len > OUTPUT_BUFFER_SIZE)
+        output_buffer_len = OUTPUT_BUFFER_SIZE;
 }
 
 // ----- Artithmetic instructions
@@ -354,7 +372,8 @@ void exec_instr()
         instr_svc();
         break;
     }
-
+    if (waiting_for_input)
+        return;
     mach_cu[PC]++;
 }
 
