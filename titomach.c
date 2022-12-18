@@ -15,8 +15,8 @@ void titomach_start()
 {
     titomach_stop();
     mach_cu[PC] = 0;
-    mach_cpu[SP] = prog_size + data_size - 1;
-    mach_cpu[FP] = prog_size + data_size - 1;
+    mach_cpu[SP] = prog_size + data_size;
+    mach_cpu[FP] = prog_size + data_size;
     printf("Init SP: %d\n", mach_cpu[SP]);
 }
 void titomach_clear_mem()
