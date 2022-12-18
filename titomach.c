@@ -1,7 +1,5 @@
 #include "titomach.h"
 
-#define CLI_MODE // Input from and output to console
-
 int prog_size = 0;
 int data_size = 0;
 
