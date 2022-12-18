@@ -1,5 +1,7 @@
 #include "titomach.h"
 
+#define CLI_MODE // Input from and output to console
+
 int prog_size = 0;
 int data_size = 0;
 
@@ -109,6 +111,7 @@ int titomach_exec()
     return EXE_ERR; // No invalid instruction / other error check yet.
 }
 
+#ifndef CLI_MODE
 int32_t titomach_is_waiting_for_input()
 {
     return waiting_for_input;
@@ -124,7 +127,7 @@ int32_t titomach_output_len(){
 int32_t titomach_output(int32_t idx){
     return output_buffer[idx];
 }
-
+#endif
 // debug
 
 int32_t titomach_debug_read_mem(int address)

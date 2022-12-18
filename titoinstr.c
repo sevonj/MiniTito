@@ -37,6 +37,7 @@ void load_instruction(int32_t input_instr)
         ins.sec_operand_value = mach_readmem(mach_readmem(ins.sec_operand_value));
 }
 
+#ifndef CLI_MODE
 void input(int32_t n)
 {
     if (!waiting_for_input)
@@ -45,6 +46,7 @@ void input(int32_t n)
     waiting_for_input = 0;
     mach_cu[PC]++;
 }
+#endif
 
 // ----- Nop
 void instr_nop() {}
@@ -61,18 +63,22 @@ void instr_store()
 }
 void instr_in()
 {
+    #ifdef CLI_MODE
     waiting_for_input = 1;
-    // printf("Please input a number: ");
-    //
-    // int result;
-    // scanf("%d", &result);
-    // mach_cpu[ins.rj] = result;
+    #else
+    printf("Please input a number: ");
+    int result;
+    scanf("%d", &result);
+    mach_cpu[ins.rj] = result;
+    #endif
+
 }
 void instr_out()
 {
     int value = mach_cpu[ins.rj];
-    // printf("OUT: %d\n", value);
-
+    #ifdef CLI_MODE
+    printf("OUT: %d\n", value);
+    #else
     for (int i = OUTPUT_BUFFER_SIZE - 1; i > 0; i--)
         output_buffer[i] = output_buffer[i - 1];
 
@@ -81,6 +87,7 @@ void instr_out()
     
     if (output_buffer_len > OUTPUT_BUFFER_SIZE)
         output_buffer_len = OUTPUT_BUFFER_SIZE;
+    #endif
 }
 
 // ----- Artithmetic instructions

@@ -15,10 +15,11 @@ int32_t mach_cu[4] = {0};
 // Memory of the machine
 int32_t mach_mem[MACHINE_MEMSIZE] = {0};
 
+#ifndef CLI_MODE
 int32_t waiting_for_input = 0;
-
 int32_t output_buffer[OUTPUT_BUFFER_SIZE] = {0};
 int32_t output_buffer_len = 0;
+#endif
 
 // ReadMem
 // Read from a memory address
