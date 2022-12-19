@@ -1,7 +1,6 @@
 #include "titoinstr.h"
 #include "titostate.h"
 #include <stdio.h>
-
 typedef struct
 {
     int32_t opcode : 8;
@@ -49,157 +48,202 @@ void input(int32_t n)
 #endif
 
 // ----- Nop
-void instr_nop() {}
+void instr_nop()
+{
+    mach_cu[PC]++;
+}
 
 // ----- Data transfer instructions
 void instr_load()
 {
     mach_cpu[ins.rj] = ins.sec_operand_value;
+    mach_cu[PC]++;
 }
 void instr_store()
 {
     // Addressing mode does something funny with store instruction.
     mach_writemem(ins.sec_operand_value, mach_cpu[ins.rj]);
+    mach_cu[PC]++;
 }
 void instr_in()
 {
-    #ifdef CLI_MODE
-    waiting_for_input = 1;
-    #else
+#ifdef CLI_MODE
     printf("Please input a number: ");
     int result;
     scanf("%d", &result);
     mach_cpu[ins.rj] = result;
-    #endif
-
+#else
+    waiting_for_input = 1;
+    return;
+#endif
+    mach_cu[PC]++;
 }
 void instr_out()
 {
     int value = mach_cpu[ins.rj];
-    #ifdef CLI_MODE
+#ifdef CLI_MODE
     printf("OUT: %d\n", value);
-    #else
+#else
     for (int i = OUTPUT_BUFFER_SIZE - 1; i > 0; i--)
         output_buffer[i] = output_buffer[i - 1];
 
     output_buffer[0] = value;
     output_buffer_len++;
-    
+
     if (output_buffer_len > OUTPUT_BUFFER_SIZE)
         output_buffer_len = OUTPUT_BUFFER_SIZE;
-    #endif
+#endif
+    mach_cu[PC]++;
 }
 
 // ----- Artithmetic instructions
 void instr_add()
 {
     mach_cpu[ins.rj] += ins.sec_operand_value;
+    mach_cu[PC]++;
 }
 void instr_sub()
 {
     mach_cpu[ins.rj] -= ins.sec_operand_value;
+    mach_cu[PC]++;
 }
 void instr_mul()
 {
     mach_cpu[ins.rj] *= ins.sec_operand_value;
+    mach_cu[PC]++;
 }
 void instr_div()
 {
     mach_cpu[ins.rj] /= ins.sec_operand_value;
+    mach_cu[PC]++;
 }
 void instr_mod()
 {
     mach_cpu[ins.rj] %= ins.sec_operand_value;
+    mach_cu[PC]++;
 }
 
 // ----- Logic instructions
 void instr_comp()
 {
-    // Clear GEL bits
-    mach_cu[SR] &= ~(0b111 << 29);
-
     // Greater
     if (mach_cpu[ins.rj] > ins.sec_operand_value)
-        mach_cu[SR] |= 1 << 31;
+    {
+        state_set_sr_bit(SR_G, 1);
+        state_set_sr_bit(SR_E, 0);
+        state_set_sr_bit(SR_L, 0);
+    }
 
     // Equal
     else if (mach_cpu[ins.rj] == ins.sec_operand_value)
-        mach_cu[SR] |= 1 << 30;
+    {
+        state_set_sr_bit(SR_G, 0);
+        state_set_sr_bit(SR_E, 1);
+        state_set_sr_bit(SR_L, 0);
+    }
 
     // Less
     else
-        mach_cu[SR] |= 1 << 29;
+    {
+        state_set_sr_bit(SR_G, 0);
+        state_set_sr_bit(SR_E, 0);
+        state_set_sr_bit(SR_L, 1);
+    }
+    mach_cu[PC]++;
 }
 
 // ----- Branching instructions
 void instr_jump()
 {
     // -1 because pc is incremented right after.
-    mach_cu[PC] = ins.sec_operand_value - 1;
+    mach_cu[PC] = ins.sec_operand_value;
 }
 
+// Jumps that use GPR
 void instr_jneg()
 {
     if (mach_cpu[ins.rj] < 0)
-    {
-        mach_cu[PC] = ins.sec_operand_value - 1;
-    }
+        mach_cu[PC] = ins.sec_operand_value;
+    else
+        mach_cu[PC]++;
 }
 void instr_jzer()
 {
     if (mach_cpu[ins.rj] == 0)
-        mach_cu[PC] = ins.sec_operand_value - 1;
+        mach_cu[PC] = ins.sec_operand_value;
+    else
+        mach_cu[PC]++;
 }
 void instr_jpos()
 {
     if (mach_cpu[ins.rj] > 0)
-        mach_cu[PC] = ins.sec_operand_value - 1;
+        mach_cu[PC] = ins.sec_operand_value;
+    else
+        mach_cu[PC]++;
 }
 void instr_jnneg()
 {
     if (mach_cpu[ins.rj] >= 0)
-        mach_cu[PC] = ins.sec_operand_value - 1;
+        mach_cu[PC] = ins.sec_operand_value;
+    else
+        mach_cu[PC]++;
 }
 void instr_jnzer()
 {
     if (mach_cpu[ins.rj] != 0)
-        mach_cu[PC] = ins.sec_operand_value - 1;
+        mach_cu[PC] = ins.sec_operand_value;
+    else
+        mach_cu[PC]++;
 }
 void instr_jnpos()
 {
     if (mach_cpu[ins.rj] <= 0)
-        mach_cu[PC] = ins.sec_operand_value - 1;
+        mach_cu[PC] = ins.sec_operand_value;
+    else
+        mach_cu[PC]++;
 }
-
+// Jumps that use SR
 void instr_jles()
 {
-    if (((mach_cu[SR] >> 29) & 1) == 1)
-        mach_cu[PC] = ins.sec_operand_value - 1;
+    if (state_get_sr_bit(SR_L))
+        mach_cu[PC] = ins.sec_operand_value;
+    else
+        mach_cu[PC]++;
 }
 void instr_jequ()
 {
-    if (((mach_cu[SR] >> 30) & 1) == 1)
-        mach_cu[PC] = ins.sec_operand_value - 1;
+    if (state_get_sr_bit(SR_E))
+        mach_cu[PC] = ins.sec_operand_value;
+    else
+        mach_cu[PC]++;
 }
 void instr_jgre()
 {
-    if (((mach_cu[SR] >> 31) & 1) == 1)
-        mach_cu[PC] = ins.sec_operand_value - 1;
+    if (state_get_sr_bit(SR_G))
+        mach_cu[PC] = ins.sec_operand_value;
+    else
+        mach_cu[PC]++;
 }
 void instr_jnles()
 {
-    if (((mach_cu[SR] >> 29) & 1) != 1)
-        mach_cu[PC] = ins.sec_operand_value - 1;
+    if (state_get_sr_bit(SR_L) == 0)
+        mach_cu[PC] = ins.sec_operand_value;
+    else
+        mach_cu[PC]++;
 }
 void instr_jnequ()
 {
-    if (((mach_cu[SR] >> 30) & 1) == 0)
-        mach_cu[PC] = ins.sec_operand_value - 1;
+    if (!state_get_sr_bit(SR_E))
+        mach_cu[PC] = ins.sec_operand_value;
+    else
+        mach_cu[PC]++;
 }
 void instr_jngre()
 {
-    if (((mach_cu[SR] >> 31) & 1) == 0)
-        mach_cu[PC] = ins.sec_operand_value - 1;
+    if (!state_get_sr_bit(SR_G))
+        mach_cu[PC] = ins.sec_operand_value;
+    else
+        mach_cu[PC]++;
 }
 
 // ----- Stack instructions
@@ -207,11 +251,13 @@ void instr_push()
 {
     mach_cpu[SP]++;
     mach_writemem(mach_cpu[SP], ins.sec_operand_value);
+    mach_cu[PC]++;
 }
 void instr_pop()
 {
     mach_cpu[ins.ri] = mach_readmem(mach_cpu[SP]);
     mach_cpu[SP]--;
+    mach_cu[PC]++;
 }
 void instr_pushr()
 {
@@ -220,6 +266,7 @@ void instr_pushr()
         mach_cpu[SP]++;
         mach_writemem(mach_cpu[SP], mach_cpu[i]);
     }
+    mach_cu[PC]++;
 }
 void instr_popr()
 {
@@ -230,6 +277,7 @@ void instr_popr()
         temp_sp--;
     }
     mach_cpu[SP] -= 6;
+    mach_cu[PC]++;
 }
 
 // ----- Subroutine instructions
@@ -239,13 +287,13 @@ void instr_call()
     mach_writemem(mach_cpu[SP], mach_cu[PC]);
     mach_cpu[SP]++;
     mach_writemem(mach_cpu[SP], mach_cpu[FP]);
-    mach_cu[PC] = ins.sec_operand_value - 1;
+    mach_cu[PC] = ins.sec_operand_value;
     mach_cpu[FP] = mach_cpu[SP];
 }
 void instr_exit()
 {
     mach_cpu[SP] = mach_cpu[FP] - 2 - ins.sec_operand_value;
-    mach_cu[PC] = mach_readmem(mach_cpu[FP] - 1);
+    mach_cu[PC] = mach_readmem(mach_cpu[FP]);
     mach_cpu[FP] = mach_readmem(mach_cpu[FP]);
 }
 // ----- Syscalls
@@ -262,6 +310,7 @@ void instr_svc()
         printf("Unknown syscall.");
         return;
     }
+    mach_cu[PC]++;
 }
 
 // ----- Functions
@@ -301,6 +350,7 @@ void exec_instr()
     case MOD:
         instr_mod();
         break;
+        /*
     case AND:
         break;
     case OR:
@@ -315,6 +365,7 @@ void exec_instr()
         break;
     case SHRA:
         break;
+        */
     case COMP:
         instr_comp();
         break;
@@ -378,10 +429,11 @@ void exec_instr()
     case SVC:
         instr_svc();
         break;
+    default:
+        // Unknown instruction
+        state_set_sr_bit(SR_U, 1);
+        break;
     }
-    if (waiting_for_input)
-        return;
-    mach_cu[PC]++;
 }
 
 void print_instr()

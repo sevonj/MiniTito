@@ -4,6 +4,10 @@
 #include <string.h>
 #include "titomach.h"
 
+// Defined in build script
+//#define CLI_MODE // Input from and output to console
+//#define VERBOSE
+
 int main(int argc, char *argv[])
 {
     // Check if the correct number of arguments was provided

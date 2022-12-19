@@ -9,7 +9,9 @@ int data_size = 0;
 void titomach_stop()
 {
     mach_cu[PC] = -1;
+#ifndef CLI_MODE
     waiting_for_input = 0;
+#endif
 }
 void titomach_start()
 {
@@ -27,7 +29,6 @@ void titomach_clear_mem()
     memset(mach_mem, 0, sizeof(mach_mem));
     prog_size = 0;
     data_size = 0;
-    output_buffer_len = 0;
 }
 // Load a .b91 file into memory
 void titomach_load_prog(const char *filename)
@@ -88,8 +89,11 @@ void titomach_load_prog(const char *filename)
 
 int titomach_exec()
 {
+#ifndef CLI_MODE
     if (waiting_for_input)
         return EXE_WAIT;
+#endif
+
     if (mach_cu[PC] < 0)
     {
         printf("titomach_exec: called but the machine is halted.");
@@ -99,9 +103,12 @@ int titomach_exec()
     // Load instruction
     mach_cu[IR] = mach_mem[mach_cu[PC]];
 
+#ifdef VERBOSE
+    print_instr();
+#endif
+
     // print_instr();
     exec_instr();
-
     if (mach_cu[PC] < 0)
         return EXE_END;
 
@@ -119,10 +126,12 @@ void titomach_input(int32_t n)
     input(n);
 }
 
-int32_t titomach_output_len(){
+int32_t titomach_output_len()
+{
     return output_buffer_len;
 }
-int32_t titomach_output(int32_t idx){
+int32_t titomach_output(int32_t idx)
+{
     return output_buffer[idx];
 }
 #endif
