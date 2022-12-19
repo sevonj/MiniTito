@@ -105,6 +105,10 @@ void instr_mul()
 }
 void instr_div()
 {
+    if (ins.sec_operand_value == 0){
+        state_set_sr_bit(SR_Z, 1);
+        return;
+    }
     mach_cpu[ins.rj] /= ins.sec_operand_value;
 }
 void instr_mod()
@@ -140,10 +144,10 @@ void instr_not()
 void instr_shra()
 {
     if (mach_cpu[ins.rj] >= 0)
-        mach_cpu[ins.rj] >> ins.sec_operand_value;
+        mach_cpu[ins.rj] >>= ins.sec_operand_value;
     else{
         mach_cpu[ins.rj] = -mach_cpu[ins.rj];
-        mach_cpu[ins.rj] >> ins.sec_operand_value;
+        mach_cpu[ins.rj] >>= ins.sec_operand_value;
         mach_cpu[ins.rj] = -mach_cpu[ins.rj];
     }
 }
@@ -343,22 +347,27 @@ void exec_instr()
     case MOD:
         instr_mod();
         break;
-        /*
     case AND:
+        instr_and();
         break;
     case OR:
+        instr_or();
         break;
     case XOR:
+        instr_xor();
         break;
     case SHL:
+        instr_shl();
         break;
     case SHR:
+        instr_shr();
         break;
     case NOT:
+        instr_not();
         break;
     case SHRA:
+        instr_shra();
         break;
-        */
     case COMP:
         instr_comp();
         break;
@@ -576,7 +585,7 @@ void print_instr()
     {
         // Print Rj
         if (ins.ri == 0)
-            printf("");
+            printf(" ");
         else if (ins.ri < 6)
             printf("R%d", ins.ri);
         else if (ins.ri == 6)
