@@ -3,11 +3,11 @@
 #include <stdio.h>
 typedef struct
 {
-    int32_t opcode : 8;
-    int32_t rj : 3;
-    int32_t mode : 2;
-    int32_t ri : 3;
-    int32_t addr : 16;
+    int8_t opcode;
+    int8_t rj;
+    int8_t mode;
+    int8_t ri;
+    int16_t addr;
     int32_t sec_operand_value; // Second operand, ri+addr or memory value, depending on mode.
 } TTK91Instruction;
 
