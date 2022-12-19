@@ -19,12 +19,6 @@ enum register_names
 
     SP = R6,
     FP = R7,
-
-    // Control Unit
-    PC = 0,
-    IR = 1,
-    TR = 2, // not used for now
-    SR = 3,
 };
 enum sr_bits
 {
@@ -50,7 +44,10 @@ extern int catastrophic_failure;
 extern int32_t mach_cpu[8];
 
 // Control unit registers
-extern int32_t mach_cu[4];
+extern int32_t mach_pc;
+extern int32_t mach_ir;
+extern int32_t mach_tr;
+extern int32_t mach_sr;
 
 // Memory of the machine
 extern int32_t mach_mem[MACHINE_MEMSIZE];

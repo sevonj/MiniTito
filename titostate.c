@@ -12,8 +12,6 @@ int catastrophic_failure = 0;
 int32_t mach_cpu[8] = {0};
 
 // Control unit registers
-int32_t mach_cu[4] = {0};
-
 int32_t mach_pc = 0;
 int32_t mach_ir = 0;
 int32_t mach_tr = 0;

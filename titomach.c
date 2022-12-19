@@ -8,7 +8,7 @@ int data_size = 0;
 
 void titomach_stop()
 {
-    mach_cu[PC] = -1;
+    mach_pc = -1;
 #ifndef CLI_MODE
     waiting_for_input = 0;
 #endif
@@ -16,7 +16,7 @@ void titomach_stop()
 void titomach_start()
 {
     titomach_stop();
-    mach_cu[PC] = 0;
+    mach_pc = 0;
     mach_cpu[SP] = prog_size + data_size;
     mach_cpu[FP] = prog_size + data_size;
     printf("Init SP: %d\n", mach_cpu[SP]);
@@ -94,14 +94,15 @@ int titomach_exec()
         return EXE_WAIT;
 #endif
 
-    if (mach_cu[PC] < 0)
+    if (mach_pc < 0)
     {
         printf("titomach_exec: called but the machine is halted.");
         return EXE_HALTED;
     }
 
     // Load instruction
-    mach_cu[IR] = mach_mem[mach_cu[PC]];
+    mach_ir = mach_mem[mach_pc];
+    mach_pc++;
 
 #ifdef VERBOSE
     print_instr();
@@ -109,7 +110,7 @@ int titomach_exec()
 
     // print_instr();
     exec_instr();
-    if (mach_cu[PC] < 0)
+    if (mach_pc < 0)
         return EXE_END;
 
     return EXE_OK;
@@ -158,17 +159,7 @@ int32_t titomach_debug_read_reg(int idx)
     return mach_cpu[idx];
 }
 // void titomach_debug_write_reg(int idx, int value){};
-int32_t titomach_debug_read_cureg(int idx)
-{
-    if (idx < 0)
-    {
-        printf("titomach_debug_read_cureg: Attempted to read cpu register index < 0.");
-        return -6969; // This should make it clear enough that something is wrong. Good for now.
-    }
-    else if (idx > 3)
-    {
-        printf("titomach_debug_read_cureg: Attempted to read cpu register index > 3.");
-        return 6969;
-    }
-    return mach_cu[idx];
-}
+int32_t titomach_debug_read_pc() { return mach_pc; }
+int32_t titomach_debug_read_ir() { return mach_ir; }
+int32_t titomach_debug_read_tr() { return mach_tr; }
+int32_t titomach_debug_read_sr() { return mach_sr; }
