@@ -414,7 +414,7 @@ void exec_instr()
         instr_pop();
         break;
     case PUSHR:
-        instr_push();
+        instr_pushr();
         break;
     case POPR:
         instr_popr();
