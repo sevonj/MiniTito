@@ -105,7 +105,8 @@ void instr_mul()
 }
 void instr_div()
 {
-    if (ins.sec_operand_value == 0){
+    if (ins.sec_operand_value == 0)
+    {
         state_set_sr_bit(SR_Z, 1);
         return;
     }
@@ -129,27 +130,21 @@ void instr_xor()
 {
     mach_cpu[ins.rj] ^= ins.sec_operand_value;
 }
+void instr_not()
+{
+    mach_cpu[ins.rj] = ~mach_cpu[ins.rj];
+}
 void instr_shl()
 {
     mach_cpu[ins.rj] <<= ins.sec_operand_value;
 }
 void instr_shr()
 {
-    mach_cpu[ins.rj] >>= ins.sec_operand_value;
-}
-void instr_not()
-{
-    mach_cpu[ins.rj] = ~mach_cpu[ins.rj];
+    mach_cpu[ins.rj] = (uint32_t)mach_cpu[ins.rj] >> ins.sec_operand_value;
 }
 void instr_shra()
 {
-    if (mach_cpu[ins.rj] >= 0)
-        mach_cpu[ins.rj] >>= ins.sec_operand_value;
-    else{
-        mach_cpu[ins.rj] = -mach_cpu[ins.rj];
-        mach_cpu[ins.rj] >>= ins.sec_operand_value;
-        mach_cpu[ins.rj] = -mach_cpu[ins.rj];
-    }
+    mach_cpu[ins.rj] >>= ins.sec_operand_value;
 }
 void instr_comp()
 {
