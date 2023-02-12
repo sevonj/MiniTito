@@ -1,3 +1,4 @@
+Archived, not used anymore. See https://github.com/sevonj/titomachine instead.
 
 # Titolib
 A hastily made ttk-91 emulator.
